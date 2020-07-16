@@ -1,16 +1,31 @@
-﻿using System.Collections;
+﻿/**
+ * @file       ROSBridgeConnector.cs
+ * @brief      An abstraction of RosConnector (by Siemens), allowing connections to be made without
+ *             the need for a MonoBehaviour script. The code here is largely took from RosConnector,
+ *             with some extra bits tacked in.
+ *
+ * @author     Benjamin Williams <trewelb@gmail.com>
+ * @copyright  Copyright (c) University of Lincoln 2020
+*/
+
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+//--
 using RosSharp;
 using RosSharp.RosBridgeClient;
 using RosSharp.RosBridgeClient.Protocols;
-
+//--
 using System.Threading;
 
 
+/// <summary>
+/// An abstraction of RosConnector to connect to rosbridge.
+/// </summary>
 public class ROSBridgeConnector
 {
+    #region Class variables
+
     /// <summary>
     /// The URI to connect with
     /// </summary>
@@ -26,7 +41,6 @@ public class ROSBridgeConnector
     /// </summary>
     protected RosSocket socket;
 
-
     /// <summary>
     /// Other ROS connection stuff: the serialiser
     /// </summary>
@@ -41,7 +55,22 @@ public class ROSBridgeConnector
     /// Is this connector connected?
     /// </summary>
     private ManualResetEvent isConnected;
-    
+
+    /// <summary>
+    /// A list of subscription identifiers for this connection
+    /// </summary>
+    /// <typeparam name="string"></typeparam>
+    /// <returns></returns>
+    public List<string> subscriptionIdentifiers = new List<string>();
+
+    #endregion
+
+    #region Constructors
+
+    /// <summary>
+    /// Creates a new ROS bridge connector given a URI
+    /// </summary>
+    /// <param name="uri"></param>
     public ROSBridgeConnector(string uri)
     {
         //Set uri, call initialise
@@ -49,6 +78,10 @@ public class ROSBridgeConnector
         this.Initialize();
     }
 
+    /// <summary>
+    /// Creates a ROS bridge connector given a list of connection information 
+    /// </summary>
+    /// <param name="connectionInfo"></param>
     public ROSBridgeConnector(ROSConnectionInfo connectionInfo)
     {
         //Set serialiser + protocol
@@ -60,18 +93,64 @@ public class ROSBridgeConnector
         this.Initialize();
     }
 
+    #endregion
+
+    #region Subscribe/Unsubscribe
+
+    /// <summary>
+    /// Subscribes to a topic and associates a handler with messages
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="topic"></param>
+    /// <param name="handler"></param>
+    /// <returns></returns>
+    public string SubscribeTo<T>(string topic, SubscriptionHandler<T> handler) where T : Message
+    {
+        //Subscribe to the topic, call handler
+        string id = this.socket.Subscribe<T>(topic, handler);
+
+        //Add to list of identifiers
+        this.subscriptionIdentifiers.Add(id);
+        
+        //Aaand return it
+        return id;
+    }
+
+    /// <summary>
+    /// Unsubscribes from a topic
+    /// </summary>
+    /// <param name="identifier"></param>
+    public void Unsubscribe(string identifier)
+    {
+        //Just call unsubscribe, easy peasy
+        this.socket.Unsubscribe(identifier);
+    }
+
+    #endregion
+
+    #region Connection funcs from RosConnector
+
+    /// <summary>
+    /// Initialisation steps common to all overloaded constructors
+    /// </summary>
     private void Initialize()
     {
         //Set is connected to false initially
         this.isConnected = new ManualResetEvent(false);
     }
 
+    /// <summary>
+    /// Connects to the host using a new thread
+    /// </summary>
     public void Connect()
     {
         //Start the connection 
         new Thread(ConnectAndWait).Start();
     }
 
+    /// <summary>
+    /// Connects and waits, calling ConnectToRos
+    /// </summary>
     protected void ConnectAndWait()
     {
         //Taken from rosconnector.cs:
@@ -85,6 +164,15 @@ public class ROSBridgeConnector
             Debug.LogWarning("Failed to connect to RosBridge at: " + uri);
     }
 
+    /// <summary>
+    /// Connects to ROS (almost directly from RosConnector)
+    /// </summary>
+    /// <param name="protocolType"></param>
+    /// <param name="serverUrl"></param>
+    /// <param name="onConnected"></param>
+    /// <param name="onClosed"></param>
+    /// <param name="serializer"></param>
+    /// <returns></returns>
     public static RosSocket ConnectToRos(Protocol protocolType, string serverUrl, System.EventHandler onConnected = null, System.EventHandler onClosed = null, RosSocket.SerializerEnum serializer = RosSocket.SerializerEnum.Microsoft)
     {
         //Taken from rosconnector.cs
@@ -101,21 +189,49 @@ public class ROSBridgeConnector
         return new RosSocket(protocol, serializer);
     }
 
+    #endregion
+
+    #region Socket functions & Handlers
+
+    /// <summary>
+    /// Returns the socket for this connection
+    /// </summary>
+    /// <returns></returns>
+    public RosSocket GetSocket()
+    {
+        return this.socket;
+    }
+
+    /// <summary>
+    /// Closes the internal socket
+    /// </summary>
     public void Close()
     {
         //Close the socket
         socket.Close();
     }
 
+    /// <summary>
+    /// Called when successfully connected to RosBridge
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
     private void OnConnected(object sender, System.EventArgs e)
     {
         isConnected.Set();
         Debug.Log("Connected to RosBridge: " + uri);
     }
 
+    /// <summary>
+    /// Called when successfully disconnected from RosBridge
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
     private void OnClosed(object sender, System.EventArgs e)
     {
         isConnected.Reset();
         Debug.Log("Disconnected from RosBridge: " + uri);
     }
+
+    #endregion
 }

@@ -7,11 +7,15 @@
 */
 
 using System.Collections;
+
 using System.Collections.Generic;
 using UnityEngine;
 
 using RosSharp.RosBridgeClient;
 using RosSharp.RosBridgeClient.Protocols;
+
+using stdMsgs = RosSharp.RosBridgeClient.MessageTypes.Std;
+using sensorMsgs = RosSharp.RosBridgeClient.MessageTypes.Sensor;
 
 [System.Serializable]
 public class ROSConnectionInfo
@@ -73,7 +77,11 @@ public class ROSDepthSubscriber : MonoBehaviour
         //Make a new connect and connect
         connector = new ROSBridgeConnector(connectionInfo);
         connector.Connect();
+
+        //Subscribe to an event
     }
+
+    // private void Subscribe()
 
     public void OnApplicationQuit()
     {
