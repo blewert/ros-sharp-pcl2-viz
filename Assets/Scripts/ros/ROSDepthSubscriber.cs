@@ -89,7 +89,31 @@ public class ROSDepthSubscriber : MonoBehaviour
 
     private void onPointCloudMessage(sensorMsgs.PointCloud2 message)
     {
-        Debug.Log("message received: " + message.data.Length);
+        /*
+         * fields:
+            x 0
+            y 4
+            z 8
+            rgb 16
+        */
+
+        //var fields = message.header.seq;
+
+        this.PrintFrameData(ref message);
+    }
+
+    private void PrintFrameData(ref sensorMsgs.PointCloud2 message)
+    {
+        var seq = message.header.seq;
+        var timeSecs = message.header.stamp.nsecs;
+
+        var bigendian = message.is_bigendian;
+        var dense = message.is_dense;
+
+        var pt_step = message.point_step;
+        var row_step = message.row_step;
+
+        Debug.Log($"[message {seq} time {timeSecs}]: big endian [{bigendian}], dense [{dense}] => step (pt) is {pt_step}, step (row) is {row_step}");
     }
 
 
