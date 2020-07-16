@@ -63,6 +63,11 @@ public class ROSBridgeConnector
     /// <returns></returns>
     public List<string> subscriptionIdentifiers = new List<string>();
 
+    /// <summary>
+    /// On connect callback
+    /// </summary>
+    private System.Action onConnectCallback;
+
     #endregion
 
     #region Constructors
@@ -126,6 +131,16 @@ public class ROSBridgeConnector
         this.socket.Unsubscribe(identifier);
     }
 
+    /// <summary>
+    /// Unsubscribe from all subscribers
+    /// </summary>
+    public void UnsubscribeFromAll()
+    {
+        //Easy peasy, just run through all and unsubscribe
+        foreach (var subscription in this.subscriptionIdentifiers)
+            this.Unsubscribe(subscription);
+    }
+
     #endregion
 
     #region Connection funcs from RosConnector
@@ -144,6 +159,18 @@ public class ROSBridgeConnector
     /// </summary>
     public void Connect()
     {
+        //Start the connection 
+        new Thread(ConnectAndWait).Start();
+    }
+
+    /// <summary>
+    /// Connects to the host using a new thread
+    /// </summary>
+    public void Connect(System.Action onConnectCallback)
+    {
+        //Set the callback
+        this.onConnectCallback = onConnectCallback;
+
         //Start the connection 
         new Thread(ConnectAndWait).Start();
     }
@@ -220,6 +247,9 @@ public class ROSBridgeConnector
     {
         isConnected.Set();
         Debug.Log("Connected to RosBridge: " + uri);
+
+        if (onConnectCallback != null)
+            onConnectCallback.Invoke();
     }
 
     /// <summary>

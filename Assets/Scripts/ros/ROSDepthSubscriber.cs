@@ -76,15 +76,28 @@ public class ROSDepthSubscriber : MonoBehaviour
     {
         //Make a new connect and connect
         connector = new ROSBridgeConnector(connectionInfo);
-        connector.Connect();
-
-        //Subscribe to an event
+        connector.Connect(this.onRosBridgeConnect);
     }
 
-    // private void Subscribe()
+    private void onRosBridgeConnect()
+    {
+        //At this point, the connection is 100% established so lets subscribe to something
+        //without fear of the RosSocket being null
+        connector.SubscribeTo<sensorMsgs.PointCloud2>("/camera/depth/color/points", onPointCloudMessage);
+    }
+
+
+    private void onPointCloudMessage(sensorMsgs.PointCloud2 message)
+    {
+        Debug.Log("message received: " + message.data.Length);
+    }
+
 
     public void OnApplicationQuit()
     {
+        //Unsubscribe
+        connector.UnsubscribeFromAll();
+
         //Close the connection on exit
         connector.Close();
     }
