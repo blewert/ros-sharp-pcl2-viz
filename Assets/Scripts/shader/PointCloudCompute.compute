@@ -19,14 +19,16 @@ RWTexture2D<float4> outTex;
 
 Point p;
 
-[numthreads(8,8,1)]
+//[numthreads(8,8,1)]
+[numthreads(64,1,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
 	//From 2D coordinate, figure out 1D coordinate
-	int i = id.x + 512 * id.y;
+	//int i = id.x + 512 * id.y;
+	//int i = id.x;
 
 	//Get the point at this index
-	p = points[i];
+	p = points[id.x];
 
 	//ros does:
 	//(-y, z, x)
@@ -35,14 +37,20 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 	//outTex[id.xy] = float4(-p.xy.y, z, p.xy.x, p.colour);
 
 
-	int r = (p.colour >> 16) & 0xff;
-	int g = (p.colour >> 8)  & 0xff;
+
+	int r = (p.colour >> 24) & 0xff;
+	int g = (p.colour >> 16)  & 0xff;
 	int b = (p.colour >> 0) & 0xff;
 
 	int lum = (r + g + b) / 3;
 
-	outTex[id.xy] = float4(-p.pos.y, p.pos.z, p.pos.x, p.colour / 256.0);
+	uint2 coord;
 
-	//outTex[id.xy] = float4(id.x / 512, id.y / 512, id.x + id.y, 0.0);
+	coord.x = id.x % (int)512;
+	coord.y = id.x / (int)512;
+
+	outTex[coord.xy] = half4(-p.pos.y, p.pos.z, p.pos.x, lum / 256.0);
+	//outTex[coord.xy] = float4(r / 256.0, g / 256.0, b / 256.0, 1.0);
+	/*outTex[coord.xy] = float4(id.x / 512, id.y / 512, id.x + id.y, 0.0);*/
     //outTex[id.xy] = float4(id.x & id.y, (id.x & 15)/15.0, (id.y & 15)/15.0, 0.0);
 }

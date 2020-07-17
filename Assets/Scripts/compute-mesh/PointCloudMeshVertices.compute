@@ -1,0 +1,61 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+#pragma kernel ComputeIndices
+
+struct Point
+{
+	//20 bytes in total:
+	//12 for x y z (4 each), that leaves 8 bytes..
+
+	// colour starts at 16 and is 4 bytes so theres a 4 byte
+	float2 xy;    // 4 + 4 + 4 bytes
+	double z;      // 8 byte depth?
+	int colour;    // 4 byte colour at 16
+
+				   // = 20 bytes
+};
+
+RWStructuredBuffer<Point> points;
+RWBuffer<float3> vertices;
+RWBuffer<int> indices;
+RWBuffer<float4> colors;
+
+float rand(float x, float y) 
+{
+	float2 co = float2(x, y);
+	return frac(sin(dot(co.xy, float2(12.9898, 78.233))) * 43758.5453);
+}
+
+float3 ros2unity(float3 input)
+{
+	//return float3(-input.y, input.z, input.x);
+	return float3(input.x, input.z, input.y);
+}
+
+[numthreads(64,1,1)]
+void ComputeIndices(uint3 id : SV_DispatchThreadID)
+{
+	//Easy peasy:
+	indices[id.x] = id.x;
+}
+
+[numthreads(64,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+	//An identifier so we dont have to write out so much
+	int i = id.x;
+
+	//Set position
+	float3 p = float3(points[i].xy.x, points[i].xy.y, points[i].z);
+	vertices[i] = ros2unity(p);
+
+	//Set colour (extract r, g, b and a), PointCloud2 data is 
+	//ARGB but is not well documented
+	uint b = (points[i].colour >> 24) & 0xff;
+	uint g = (points[i].colour >> 16) & 0xff;
+	uint r = (points[i].colour >> 8) & 0xff;
+	uint a = points[i].colour & 0xff;
+
+	//Set colour
+	colors[i] = float4(r, g, b, a) / 255.0;
+}

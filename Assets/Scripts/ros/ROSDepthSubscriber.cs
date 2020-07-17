@@ -79,6 +79,9 @@ public class ROSDepthSubscriber : MonoBehaviour
 
     public UnityEngine.VFX.VisualEffect visualEffect;
 
+    private int texSize = 512;
+    private int numThreads = 64;
+
     public void Start()
     {
         //Make a new connect and connect
@@ -86,11 +89,11 @@ public class ROSDepthSubscriber : MonoBehaviour
         connector.Connect(this.onRosBridgeConnect);
 
         //Make buffer
-        texture = new RenderTexture(512, 512, 32);
+        texture = new RenderTexture(texSize, texSize, 0, RenderTextureFormat.ARGBFloat);
         texture.enableRandomWrite = true;
         texture.Create();
 
-        buffer = new ComputeBuffer(texture.width * texture.height, 20);
+        buffer = new ComputeBuffer(texSize * texSize, 20, ComputeBufferType.Structured);
         this.kernelID = computeShader.FindKernel("CSMain");
     }
 
@@ -148,9 +151,10 @@ public class ROSDepthSubscriber : MonoBehaviour
             buffer.SetData(lastBytes);
             computeShader.SetTexture(kernelID, "outTex", texture);
             computeShader.SetBuffer(kernelID, "points", buffer);
-            computeShader.Dispatch(kernelID, texture.width / 8, texture.height / 8, 1);
+            //computeShader.Dispatch(kernelID, texture.width / numThreads, texture.height / numThreads, 1);
+            computeShader.Dispatch(kernelID, buffer.count / numThreads, 1, 1);
 
-            Debug.Log("dispatch!");
+            //Debug.Log("dispatch!");
 
             //Set dispatch seq
             oldDispatchSeq = dispatchSeq;
