@@ -72,11 +72,26 @@ public class ROSDepthSubscriber : MonoBehaviour
     /// </summary>
     public ROSBridgeConnector connector;
 
+    public ComputeShader computeShader;
+    public RenderTexture texture;
+    private ComputeBuffer buffer;
+    private int kernelID;
+
+    public UnityEngine.VFX.VisualEffect visualEffect;
+
     public void Start()
     {
         //Make a new connect and connect
         connector = new ROSBridgeConnector(connectionInfo);
         connector.Connect(this.onRosBridgeConnect);
+
+        //Make buffer
+        texture = new RenderTexture(512, 512, 32);
+        texture.enableRandomWrite = true;
+        texture.Create();
+
+        buffer = new ComputeBuffer(texture.width * texture.height, 20);
+        this.kernelID = computeShader.FindKernel("CSMain");
     }
 
     private void onRosBridgeConnect()
@@ -86,20 +101,71 @@ public class ROSDepthSubscriber : MonoBehaviour
         connector.SubscribeTo<sensorMsgs.PointCloud2>("/camera/depth/color/points", onPointCloudMessage);
     }
 
+    private byte[] lastBytes;
+
+    private int dispatchSeq = 0;
+    private int oldDispatchSeq = 0;
 
     private void onPointCloudMessage(sensorMsgs.PointCloud2 message)
     {
         /*
          * fields:
-            x 0
-            y 4
-            z 8
-            rgb 16
+            x 0 32
+            y 4 32
+            z 8 64?
+            rgb 16 
+
+            20 bytes:
+            ----------
+            x is bytes   [0 to 4]
+            y is bytes   [4 to 8]
+            z is bytes   [8 to 16]
+            rgb is bytes [16 to 20]
         */
 
         //var fields = message.header.seq;
 
-        this.PrintFrameData(ref message);
+        //Debug.Log(message.data.Length / message.point_step);
+
+
+        //Get the first element
+        lastBytes = message.data;
+        dispatchSeq++;
+
+        //this.PrintFrameData(ref message);
+        //this.PrintFieldData(ref message);
+    }
+
+    private void Update()
+    {
+        //For some reason unity doesnt run the compute shader stuff
+        //if its in the onPointCloudMessage callback.. so this is a work around.
+
+        if(oldDispatchSeq != dispatchSeq)
+        {
+            //And do compute shader stuff
+            //Run compute shader
+            buffer.SetData(lastBytes);
+            computeShader.SetTexture(kernelID, "outTex", texture);
+            computeShader.SetBuffer(kernelID, "points", buffer);
+            computeShader.Dispatch(kernelID, texture.width / 8, texture.height / 8, 1);
+
+            Debug.Log("dispatch!");
+
+            //Set dispatch seq
+            oldDispatchSeq = dispatchSeq;
+        }
+
+        int texID = Shader.PropertyToID("renderTexture");
+        visualEffect.SetTexture(texID, texture);
+    }
+
+    private void PrintFieldData(ref sensorMsgs.PointCloud2 message)
+    {
+        foreach(var field in message.fields)
+        {
+            Debug.Log($"Start at byte {field.offset}, read {field.count}, name = {field.name}, datatype = {field.datatype}");
+        }
     }
 
     private void PrintFrameData(ref sensorMsgs.PointCloud2 message)
@@ -124,5 +190,7 @@ public class ROSDepthSubscriber : MonoBehaviour
 
         //Close the connection on exit
         connector.Close();
+
+        buffer.Dispose();
     }
 }
