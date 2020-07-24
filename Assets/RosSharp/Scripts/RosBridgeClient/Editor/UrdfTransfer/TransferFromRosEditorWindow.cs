@@ -25,7 +25,6 @@ namespace RosSharp.RosBridgeClient
     public class TransferFromRosEditorWindow : EditorWindow
     {
         private static Protocols.Protocol protocolType;
-        private static RosSocket.SerializerEnum serializerType;
         private static string address;
         private static string urdfParameter;
         private static int timeout;
@@ -62,11 +61,6 @@ namespace RosSharp.RosBridgeClient
                 protocolType = (Protocols.Protocol)EditorGUILayout.EnumPopup("Protocol", protocolType);
                 EditorGUILayout.EndHorizontal();
 
-                EditorGUILayout.BeginHorizontal();
-                EditorGUIUtility.labelWidth = 100;
-                serializerType = (RosSocket.SerializerEnum)EditorGUILayout.EnumPopup("Serializer", serializerType);
-                EditorGUILayout.EndHorizontal();
-
                 //TODO URDF Parameter
                 EditorGUILayout.BeginHorizontal();
                 urdfParameter = EditorGUILayout.TextField("URDF Parameter", urdfParameter);
@@ -97,7 +91,7 @@ namespace RosSharp.RosBridgeClient
             {
                 SetEditorPrefs();
 
-                Thread rosSocketConnectThread = new Thread(() => transferHandler.TransferUrdf(protocolType, address, timeout, assetPath, urdfParameter, serializerType));
+                Thread rosSocketConnectThread = new Thread(() => transferHandler.TransferUrdf(protocolType, address, timeout, assetPath, urdfParameter));
                 rosSocketConnectThread.Start();
             }
             EditorGUILayout.EndHorizontal();
@@ -159,7 +153,7 @@ namespace RosSharp.RosBridgeClient
         private void GetEditorPrefs()
         {
             protocolType = (Protocols.Protocol)(EditorPrefs.HasKey("UrdfImporterProtocolNumber") ?
-                EditorPrefs.GetInt("UrdfImporterProtocolNumber") : 0);
+                EditorPrefs.GetInt("UrdfImporterProtocolNumber") : 1);
 
             address = (EditorPrefs.HasKey("UrdfImporterAddress") ?
                 EditorPrefs.GetString("UrdfImporterAddress") :

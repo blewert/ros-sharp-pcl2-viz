@@ -50,7 +50,7 @@ namespace RosSharp.RosBridgeClient
                 };
         }
 
-        public void TransferUrdf(Protocols.Protocol protocolType, string serverUrl, int timeout, string assetPath, string urdfParameter, RosSocket.SerializerEnum serializer)
+        public void TransferUrdf(Protocols.Protocol protocolType, string serverUrl, int timeout, string assetPath, string urdfParameter)
         {
             this.timeout = timeout;
             this.assetPath = assetPath;
@@ -59,7 +59,7 @@ namespace RosSharp.RosBridgeClient
             // initialize
             ResetStatusEvents();
 
-            rosSocket = RosConnector.ConnectToRos(protocolType, serverUrl, OnConnected, OnClosed, serializer);
+            rosSocket = RosConnector.ConnectToRos(protocolType, serverUrl, OnConnected, OnClosed);
 
             if (!StatusEvents["connected"].WaitOne(timeout * 1000))
             {

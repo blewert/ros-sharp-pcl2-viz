@@ -28,12 +28,10 @@ namespace RosSharp.RosBridgeClient
         protected override bool ServiceCallHandler(rosapi.GetParamRequest request, out rosapi.GetParamResponse response)
         {
             response = new rosapi.GetParamResponse();
-            string responseValue;
-            if (Parameters.TryGetValue(request.name, out responseValue))
-            {
-                response.value = responseValue;
+            
+            if (Parameters.TryGetValue(request.name, out response.value))
                 return true;
-            }
+
             response.value = "unknown parameter " + request.name;
             return false;
         }

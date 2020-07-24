@@ -13,9 +13,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Added allocation free alternatives
-// UoK , 2019, Odysseas Doumas (od79@kent.ac.uk / odydoum@gmail.com)
-
 using UnityEngine;
 
 namespace RosSharp.RosBridgeClient
@@ -52,25 +49,29 @@ namespace RosSharp.RosBridgeClient
         private void UpdateMessage()
         {
             message.header.Update();
-            GetGeometryPoint(PublishedTransform.position.Unity2Ros(), message.pose.position);
-            GetGeometryQuaternion(PublishedTransform.rotation.Unity2Ros(), message.pose.orientation);
+            message.pose.position = GetGeometryPoint(PublishedTransform.position.Unity2Ros());
+            message.pose.orientation = GetGeometryQuaternion(PublishedTransform.rotation.Unity2Ros());
 
             Publish(message);
         }
 
-        private static void GetGeometryPoint(Vector3 position, MessageTypes.Geometry.Point geometryPoint)
+        private MessageTypes.Geometry.Point GetGeometryPoint(Vector3 position)
         {
+            MessageTypes.Geometry.Point geometryPoint = new MessageTypes.Geometry.Point();
             geometryPoint.x = position.x;
             geometryPoint.y = position.y;
             geometryPoint.z = position.z;
+            return geometryPoint;
         }
 
-        private static void GetGeometryQuaternion(Quaternion quaternion, MessageTypes.Geometry.Quaternion geometryQuaternion)
+        private MessageTypes.Geometry.Quaternion GetGeometryQuaternion(Quaternion quaternion)
         {
+            MessageTypes.Geometry.Quaternion geometryQuaternion = new MessageTypes.Geometry.Quaternion();
             geometryQuaternion.x = quaternion.x;
             geometryQuaternion.y = quaternion.y;
             geometryQuaternion.z = quaternion.z;
             geometryQuaternion.w = quaternion.w;
+            return geometryQuaternion;
         }
 
     }
