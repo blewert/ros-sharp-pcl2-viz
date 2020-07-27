@@ -8,6 +8,7 @@ Shader "UoL/PointCloud2 ComputeBuffer Renderer (direct-to-shader)"
 	{
 		_Tint("Tint", Color) = (0.5, 0.5, 0.5, 1)
 		_PointSize("Point size", Float) = 0.05
+		_PointMultMagnitude("Point magnitude multiplier", Vector) = (1, 0.2, 1, 1)
 		[Toggle] _Distance ("Apply Distance", Float) = 1
     }
     SubShader
@@ -43,6 +44,7 @@ Shader "UoL/PointCloud2 ComputeBuffer Renderer (direct-to-shader)"
 			uniform half4 _Tint;
 			uniform float4x4 _Transform;
 			uniform half _PointSize;
+			uniform half3 _PointMultMagnitude;
 
 			//Uniforms for buffers
 			StructuredBuffer<float3> _Vertices;
@@ -57,6 +59,12 @@ Shader "UoL/PointCloud2 ComputeBuffer Renderer (direct-to-shader)"
 				col *= _Tint.rgb * 2;
 
 				v2f o;
+
+				//hadamard it
+				pos.x *= _PointMultMagnitude.x;
+				pos.y *= _PointMultMagnitude.y;
+				pos.z *= _PointMultMagnitude.z;
+
 				o.position = UnityObjectToClipPos(pos);
 				o.color = col;
 

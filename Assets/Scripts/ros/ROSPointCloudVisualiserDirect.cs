@@ -107,6 +107,11 @@ public class ROSPointCloudVisualiserDirect : MonoBehaviour
     public Vector3 renderArea = new Vector3(1, 0.2f, 1);
 
     /// <summary>
+    /// The point size
+    /// </summary>
+    public float pointSize = 1f;
+
+    /// <summary>
     /// The last sequence value of the data
     /// </summary>
     private uint lastSeq = default(uint);
@@ -156,6 +161,7 @@ public class ROSPointCloudVisualiserDirect : MonoBehaviour
 
         //Set shader params
         GetComponent<Renderer>().material.SetVector("_PointMultMagnitude", renderArea);
+        GetComponent<Renderer>().material.SetFloat("_PointSize", pointSize);
 
         //Set last sequence value to this seq value
         lastSeq = subscriber.seqValue;
