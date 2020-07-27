@@ -12,6 +12,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+[AddComponentMenu("UoL/ROS/PointCloud2 Visualiser (mesh-based)")]
 [RequireComponent(typeof(ROSPointCloud2Subscriber))]
 public class ROSPointCloudVisualiser : MonoBehaviour
 {

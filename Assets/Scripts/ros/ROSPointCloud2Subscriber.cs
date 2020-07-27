@@ -17,6 +17,8 @@ using RosSharp.RosBridgeClient;
 using stdMessages = RosSharp.RosBridgeClient.MessageTypes.Std;
 using sensorMessages = RosSharp.RosBridgeClient.MessageTypes.Sensor;
 
+[AddComponentMenu("UoL/ROS/PointCloud2 Subscriber")]
+[RequireComponent(typeof(RosConnector))]
 public class ROSPointCloud2Subscriber : UnitySubscriber<sensorMessages.PointCloud2>
 {
     #region Fields
