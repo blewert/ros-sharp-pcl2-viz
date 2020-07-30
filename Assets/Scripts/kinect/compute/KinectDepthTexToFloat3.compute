@@ -1,0 +1,52 @@
+﻿/**
+ * @file   KinectDepthTexToFloat3.compute/hlsl
+ * @brief  A compute shader which takes an array of depth points
+ *         and converts them to vertices in object-space
+*/
+
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+static const half KINECT_DEPTH_WIDTH  = 512.0f;
+static const half KINECT_DEPTH_HEIGHT = 424.0f;
+
+//This buffer is actually half the size of the actual buffer, because
+//the depth values are 2-byte ushorts, and this is an int buffer.
+RWBuffer<int> depthBufferInt;
+
+//The out buffer: this will be twice the size of the depth buffer
+RWStructuredBuffer<float3> outBuffer;
+
+
+[numthreads(64,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+	//Out of bounds? return
+	if (id.x > (KINECT_DEPTH_WIDTH * KINECT_DEPTH_HEIGHT))
+		return;
+
+    //This id is actually half the size of the out buffer. So, we need to 
+	//convert it to an id in the out buffer.
+	int i = (id.x * 2);
+
+	//Find the element of the in-buffer with this id
+	int v = depthBufferInt[i];
+
+	//Get the 1-2 and 3-4 ushorts into two ints
+	int vl = (int)((v >> 16) & 0xffff);
+	int vh = (int)(v & 0xffff);
+
+	half DEPTH_MAX = 100.0f;
+
+	//x1, x2
+	half x1 = (i % KINECT_DEPTH_WIDTH);
+	half x2 = (i + 1) % KINECT_DEPTH_WIDTH;
+
+	//y1, y2
+	half y1 = i / KINECT_DEPTH_WIDTH;
+	half y2 = (i + 1) / KINECT_DEPTH_WIDTH;
+
+	//Set out buffer
+	outBuffer[i]     = float3(x1, y1, vl / DEPTH_MAX);
+	outBuffer[i + 1] = float3(x2, y2, vh / DEPTH_MAX);
+}
